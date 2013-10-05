@@ -280,7 +280,10 @@ unsigned int Ext2FS::blockaddr2sector(unsigned int block)
  */
 struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 {
-	//COMPLETAR
+	Ext2FSBlockGroupDescriptor *descriptor = (Ext2FSBlockGroupDescriptor *) blockgroup_for_inode(inode_number);
+	unsigned int table_offset = blockgroup_inode_index(inode_number);
+	return (struct Ext2FSInode *) (descriptor->inode_table + sizeof(Ext2FSInode) * table_offset);
+	// return &(((Ext2FSInode*) (descriptor->inode_table))[table_offset]);
 }
 
 unsigned int Ext2FS::get_block_address(struct Ext2FSInode * inode, unsigned int block_number)
