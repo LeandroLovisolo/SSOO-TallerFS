@@ -305,7 +305,21 @@ struct Ext2FSInode * Ext2FS::get_file_inode_from_dir_inode(struct Ext2FSInode * 
 		from = load_inode(EXT2_RDIR_INODE_NUMBER);
 	assert(INODE_ISDIR(from));
 
-	//COMPLETAR
+	unsigned int block_size = 1024 << _superblock->log_block_size;
+	unsigned char block_buf[block_size];
+
+	for(unsigned int i = 0; i < from->blocks; i++) {
+		read_block(get_block_address(from, i), block_buf);
+
+		Ext2FSDirEntry *entry = (Ext2FSDirEntry *) block_buf;
+
+		(unsigned int) entry += entry->record_length;
+
+
+
+	}
+
+	return (Ext2FSInode*) NULL;
 }
 
 fd_t Ext2FS::get_free_fd()
