@@ -285,7 +285,7 @@ struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 
 unsigned int Ext2FS::get_block_address(struct Ext2FSInode * inode, unsigned int block_number)
 {
-	//COMPLETAR
+	return inode->block[block_number];
 }
 
 void Ext2FS::read_block(unsigned int block_address, unsigned char * buffer)
