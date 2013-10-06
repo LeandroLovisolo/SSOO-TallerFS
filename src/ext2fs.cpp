@@ -375,79 +375,35 @@ struct Ext2FSInode * Ext2FS::get_file_inode_from_dir_inode(struct Ext2FSInode * 
 
 	unsigned int inode_number;
 	unsigned int block_size = 1024 << _superblock->log_block_size;
-	unsigned char buffer[block_size];
-	Ext2FSDirEntry *dir_entry;
+	unsigned char dir_buffer[block_size];
 
 	bool entry_not_found = true;
-	bool last_file_entry_not_found = true;
-	unsigned int actual_block_number = 0;
-	while(entry_not_found && last_file_entry_not_found){
+	unsigned int current_block_number = 0;
+	unsigned int total_bytes_read = 0;
+	while(entry_not_found) {
 		unsigned int block_bytes_read = 0;
-		unsigned int block_address = get_block_address(from, actual_block_number);
-		read_block(block_address, buffer);
-		while (last_file_entry_not_found && (block_bytes_read < block_size)) {
-			dir_entry = (Ext2FSDirEntry *) &buffer[block_bytes_read];
+		read_block(get_block_address(from, current_block_number), dir_buffer);
+		while(block_bytes_read < block_size && total_bytes_read < from->size && entry_not_found) {
+			Ext2FSDirEntry* dir_entry = (Ext2FSDirEntry*) &dir_buffer[block_bytes_read];
 			assert((dir_entry->record_length % 4) == 0);
-			if(strncmp(filename, (*dir_entry).name, dir_entry->name_length) == 0){
+			if(dir_entry->inode != 0 && strncmp(filename, dir_entry->name, dir_entry->name_length) == 0){
 				entry_not_found = false;
 				inode_number = dir_entry->inode;
 			}
-			if(dir_entry->inode == 0){
-				last_file_entry_not_found = false;
-			}
+
 			block_bytes_read += dir_entry->record_length;
+			total_bytes_read += dir_entry->record_length;
 		}
-		actual_block_number++;
+		current_block_number++;
 	}
 
-	if(!last_file_entry_not_found){
+	if(entry_not_found) {
 		printf("get_file_inode_from_dir_inode:: File not found\n");
 		return NULL;
 	} else {
 		assert(inode_number != NULL);
 		return load_inode(inode_number);
 	}
-
-	// Nuestra implementación original: ///////////////////////////////////////
-
-	// if(from == NULL)
-	// 	from = load_inode(EXT2_RDIR_INODE_NUMBER);
-	// assert(INODE_ISDIR(from));
-
-	// // Compute block size by shifting the value 1024
-	// unsigned int block_size = 1024 << _superblock->log_block_size;
-
-	// unsigned int seek = 0;
-
-	// for(unsigned int block = 0; block < from->blocks; block++)
-	// {
-	// 	unsigned int block_address = get_block_address(from, block);
-
-	// 	unsigned char block_buf[block_size];
-	// 	read_block(block_address, block_buf);
-
-	// 	unsigned int buf_offset = 0;
-
-	// 	while(seek < from->size && buf_offset < block_size)
-	// 	{
-	// 		Ext2FSDirEntry *entry = (Ext2FSDirEntry *) (block_buf + buf_offset);
-			
-	// 		if(strcmp(entry->name, filename) == 0)
-	// 		{
-	// 			return load_inode(entry->inode);
-	// 		}
-
-	// 		buf_offset += entry->record_length;
-	// 		seek += entry->record_length;
-	// 	}
-
-	// 	// do
-	// 	// {
-	// 	// 	buffer[read++] = block_buf[seek++ % block_size];
-	// 	// } while(((seek % block_size) != 0) && (read < realsize));
-	// }
-
-	// return (Ext2FSInode*) NULL;
 }
 
 fd_t Ext2FS::get_free_fd()

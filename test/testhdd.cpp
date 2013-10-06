@@ -31,7 +31,11 @@ int main(int argc, char ** argv)
 	struct Ext2FSInode * inode = fs->inode_for_path("/grupos/g5");
 	cout << *inode << endl;
 
-	//COMPLETAR
+	fd_t fd = fs->open("/grupos/g1/nota.txt", NULL);
+	fs->seek(fd, 14000-1);
+	unsigned char buff[18]; buff[17] = 0;
+	fs->read(fd, buff, 17);
+	cout << buff << endl;
 	
 	return 0;
 }
