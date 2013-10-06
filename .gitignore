@@ -1,3 +1,10 @@
+# Binarios y código objeto
+*.o
+test/testhdd
+
+# Disco descomprimido
+test/hdd.raw
+
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
