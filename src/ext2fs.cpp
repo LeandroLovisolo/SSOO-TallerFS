@@ -323,47 +323,40 @@ struct Ext2FSInode * Ext2FS::load_inode(unsigned int inode_number)
 unsigned int Ext2FS::get_block_address(struct Ext2FSInode * inode, unsigned int block_number)
 {
 	unsigned int block_size = 1024 << _superblock->log_block_size;
-	unsigned int blocks_in_block = block_size / _superblock->inode_size;
-	unsigned int block_addr_in_block = block_size / sizeof(unsigned int);
-	unsigned int buffer_block [block_addr_in_block];// no deberia tirar seg fault
-	unsigned int temp;
-	//if (block_number > inode->blocks) return NULL;
+	unsigned int addr_per_block = block_size / sizeof(unsigned int);
+	unsigned int buffer_block[addr_per_block];
 
+	// Opcion 1: Devuelvo la referencia directa.
 	if (block_number < 12) return inode->block[block_number];
 
+	// Opcion 2: Devuelvo la referencia en la indireccion simple.
 	block_number -= 12;
-	if (block_number < block_addr_in_block){
-		temp = inode->block[12];
-		read_block(temp, (unsigned char *)buffer_block);
+	if (block_number < addr_per_block){
+		unsigned int indirection = inode->block[12];
+		read_block(indirection, (unsigned char *) buffer_block);
 		return buffer_block[block_number];
 	}
 
-	block_number -= block_addr_in_block;
-	if (block_number < block_addr_in_block*block_addr_in_block){
-		read_block(inode->block[13], (unsigned char *)buffer_block);
-		unsigned int temp_block_addr = buffer_block[block_number/block_addr_in_block];
-		read_block(temp_block_addr, (unsigned char *)buffer_block);
-		return buffer_block[block_number%block_addr_in_block];
+	// Opcion 3: Devuelvo la referencia en la indireccion doble.
+	block_number -= addr_per_block;
+	if (block_number < addr_per_block * addr_per_block){
+		read_block(inode->block[13], (unsigned char *) buffer_block);
+		unsigned int indirection = buffer_block[block_number / addr_per_block];
+		read_block(indirection, (unsigned char *) buffer_block);
+		return buffer_block[block_number % addr_per_block];
 	}
-
-	block_number -= block_addr_in_block * block_addr_in_block;
-	if (block_number < block_addr_in_block*block_addr_in_block*block_addr_in_block){
-		read_block(inode->block[14], (unsigned char *)buffer_block);
-		unsigned int temp_block_addr = buffer_block[block_number/(block_addr_in_block*block_addr_in_block)];
-
-		read_block(temp_block_addr, (unsigned char *)buffer_block);
-		block_number = block_number % (block_addr_in_block*block_addr_in_block);
-		temp_block_addr = buffer_block[block_number/block_addr_in_block];
-
-		read_block(temp_block_addr, (unsigned char *)buffer_block);
-		return buffer_block[block_number%block_addr_in_block];
-	}
-
-	return NULL;
-
-	// Nuestra implementación original: ///////////////////////////////////////
 	
-	// return inode->block[block_number];
+	// Opcion 4: Devuelvo la referencia en la indireccion triple.
+	block_number -= addr_per_block * addr_per_block;
+	
+	read_block(inode->block[14], (unsigned char *) buffer_block);
+	unsigned int indirection = buffer_block[block_number / (addr_per_block * addr_per_block)];
+	read_block(indirection, (unsigned char *) buffer_block);
+	block_number = block_number % (addr_per_block * addr_per_block);
+	indirection = buffer_block[block_number / addr_per_block];
+	read_block(indirection, (unsigned char *) buffer_block);
+	
+	return buffer_block[block_number % addr_per_block];
 }
 
 void Ext2FS::read_block(unsigned int block_address, unsigned char * buffer)
