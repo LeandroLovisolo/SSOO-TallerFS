@@ -1,5 +1,6 @@
 CC=g++
-CFLAGS=-g -Wall -pedantic -m32 -I../include/
+CFLAGS=-g -Wall -pedantic -m32 s-I../include/
+
 
 all: hdd.o pentry.o mbr.o
 

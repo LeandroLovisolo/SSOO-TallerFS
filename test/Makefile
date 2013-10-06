@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-g -Wall -pedantic -m32 -I../include/
+CFLAGS=-g -w -pedantic -m32 -I../include/
 
 all: testhdd
 
@@ -14,4 +14,5 @@ testhdd.o: testhdd.cpp
 
 clean:
 	rm -rf *.o
+	rm -rf ../src/*.o
 	rm -rf testhdd
